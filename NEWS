@@ -1,0 +1,8 @@
+CHANGES IN VERSION 1.11.3
+------------------------
+ o remove dependency of DOSE
+ o remove Streptomyces coelicolor support, as the genome wide annotation package contributor no longer supports it. 
+
+CHANGES IN VERSION 1.11.2
+------------------------
+ o Using methods implemented in DOSE for semantic similarity calculation.
