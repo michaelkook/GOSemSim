@@ -31,23 +31,7 @@ loadICdata <- function(organism, ont) {
 }
 
 
-##' Information Content Based Methods for semantic similarity measuring
-##'
-##' implemented for methods proposed by Resnik, Jiang, Lin and Schlicker.
-##' @title information content based methods
-##' @param ID1 Ontology Term
-##' @param ID2 Ontology Term
-##' @param ont Ontology
-##' @param method one of "Resnik", "Jiang", "Lin" and "Rel".
-##' @param organism one of supported species
-##' @return semantic similarity score
-##' @importFrom DO.db DOANCESTOR
-##' @author Guangchuang Yu \url{http://ygc.name}
-infoContentMethod <- function(ID1,
-                              ID2,
-                              ont="DO",
-                              method,
-                              organism="human") {
+getIC <- function(organism, ont) {
     if(!exists("ICEnv")) {
         .initial()
     }
@@ -61,6 +45,43 @@ infoContentMethod <- function(ID1,
         loadICdata(organism, ont)
     }
     IC <- get(org.ont.IC, envir=ICEnv)
+    return(IC)
+}
+
+
+getAncestors <- function(ID, ont) {
+    Ancestors <- switch(ont,
+                        MF = "GOMFANCESTOR",
+                        BP = "GOBPANCESTOR",
+                        CC = "GOCCANCESTOR",
+                        DO = "DOANCESTOR"
+                        )
+    if (ont == "DO") {
+        db <- "DO.db"
+        require(db, character.only=TRUE)
+    }
+    Ancestors <- eval(parse(text=Ancestors))
+    anc <- get(ID, Ancestors)
+    return (anc)
+}
+##' Information Content Based Methods for semantic similarity measuring
+##'
+##' implemented for methods proposed by Resnik, Jiang, Lin and Schlicker.
+##' @title information content based methods
+##' @param ID1 Ontology Term
+##' @param ID2 Ontology Term
+##' @param ont Ontology
+##' @param method one of "Resnik", "Jiang", "Lin" and "Rel".
+##' @param organism one of supported species
+##' @return semantic similarity score
+##' @importFrom DO.db DOANCESTOR
+##' @author Guangchuang Yu \url{http://ygc.name}
+infoContentMethod <- function(ID1,
+                               ID2,
+                               ont="DO",
+                               method,
+                               organism="human") {
+    IC <- getIC(organism, ont)
 
     ## more specific term, larger IC value.
     ## Normalized, all divide the most informative IC.
@@ -75,15 +96,22 @@ infoContentMethod <- function(ID1,
 
     IC[topNode] = 0
 
+    if (! ID1 %in% names(IC)) {
+      return (NA)
+    }
+    if (! ID2 %in% names(IC)) {
+      return (NA)
+    }
+
     ic1 <- IC[ID1]/mic
     ic2 <- IC[ID2]/mic
 
     if (ic1 == 0 || ic2 == 0)
         return (NA)
 
-    ONTANCESTOR <- .getAncestors(ont)
-    ancestor1 <- get(ID1, ONTANCESTOR)
-    ancestor2 <- get(ID2, ONTANCESTOR)
+    ancestor1 <- getAncestors(ID1, ont)
+    ancestor2 <- getAncestors(ID2, ont)
+
     if (ID1 == ID2) {
         commonAncestor <- ID1
     } else if (ID1 %in% ancestor2) {
@@ -100,12 +128,13 @@ infoContentMethod <- function(ID1,
 
     ## IC is biased
     ## because the IC of a term is dependent of its children but not on its parents.
-    sim <- switch(method,
-                  Resnik = mica, ## Resnik does not consider how distant the terms are from their common ancestor.
-                  ## Lin and Jiang take that distance into account.
-                  Lin = 2*mica/(ic1+ic2),
-                  Jiang = 1 - min(1, -2*mica + ic1 + ic2),
-                  Rel = 2*mica/(ic1+ic2)*(1-exp(-mica*mic))  ## mica*mic equals to the original IC value. and exp(-mica*mic) equals to the probability of the term's occurence.
-                  )
+
+    sim <- .Call("infoContentMethod_cpp",
+                 ic1, ic2,
+                 mica, mic,
+                 method,
+                 package="GOSemSim"
+                 )
     return (sim)
 }
+
