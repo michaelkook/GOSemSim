@@ -48,7 +48,6 @@ getIC <- function(organism, ont) {
     return(IC)
 }
 
-
 getAncestors <- function(ID, ont) {
     Ancestors <- switch(ont,
                         MF = "GOMFANCESTOR",
@@ -61,9 +60,12 @@ getAncestors <- function(ID, ont) {
         require(db, character.only=TRUE)
     }
     Ancestors <- eval(parse(text=Ancestors))
-    anc <- get(ID, Ancestors)
+    ## anc <- get(ID, Ancestors)
+    anc <- Ancestors[[ID]]
     return (anc)
 }
+
+
 ##' Information Content Based Methods for semantic similarity measuring
 ##'
 ##' implemented for methods proposed by Resnik, Jiang, Lin and Schlicker.
@@ -83,58 +85,18 @@ infoContentMethod <- function(ID1,
                                organism="human") {
     IC <- getIC(organism, ont)
 
-    ## more specific term, larger IC value.
-    ## Normalized, all divide the most informative IC.
-    ## all IC values range from 0(root node) to 1(most specific node)
-    mic <- max(IC[IC!=Inf])
-
-    if (ont == "DO") {
-        topNode <- "DOID:4"
-    } else {
-        topNode <- "all"
-    }
-
-    IC[topNode] = 0
-
-    if (! ID1 %in% names(IC)) {
-      return (NA)
-    }
-    if (! ID2 %in% names(IC)) {
-      return (NA)
-    }
-
-    ic1 <- IC[ID1]/mic
-    ic2 <- IC[ID2]/mic
-
-    if (ic1 == 0 || ic2 == 0)
-        return (NA)
-
     ancestor1 <- getAncestors(ID1, ont)
     ancestor2 <- getAncestors(ID2, ont)
-
-    if (ID1 == ID2) {
-        commonAncestor <- ID1
-    } else if (ID1 %in% ancestor2) {
-        commonAncestor <- ID1
-    } else if (ID2 %in% ancestor1) {
-        commonAncestor <- ID2
-    } else {
-        commonAncestor <- intersect(ancestor1, ancestor2)
-    }
-    if (length(commonAncestor) == 0) return (NA)
-
-    ##Information Content of the most informative common ancestor (MICA)
-    mica <- max(IC[commonAncestor])/mic
 
     ## IC is biased
     ## because the IC of a term is dependent of its children but not on its parents.
 
     sim <- .Call("infoContentMethod_cpp",
-                 ic1, ic2,
-                 mica, mic,
-                 method,
+                 ID1, ID2,
+                 ancestor1, ancestor2,
+                 names(IC), IC,
+                 method, ont,
                  package="GOSemSim"
                  )
     return (sim)
 }
-
