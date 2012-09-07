@@ -10,7 +10,7 @@ setMethod(
               size <- length(object@GeneClusters)
               cluster_gos=list()
               for(i in 1:size){
-                  cluster_gos[[i]]=sapply(object@GeneClusters[[i]], gene2GO, params)
+                  cluster_gos[[i]]=sapply(object@GeneClusters[[i]], gene2GO, organism=params@organism, ont=params@ontology, dropCodes=params@dropCodes)
               }
               assign("SemSimCache", new.env(hash=TRUE),envir=.GlobalEnv)
 

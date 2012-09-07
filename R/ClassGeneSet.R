@@ -10,8 +10,8 @@ setMethod(
                   stop("*combine* must be setting for combining semantic similarity scores of multiple GO terms. \n
                        Using setCombineMethod(\"Params\") to specify which method to combine.")
               }
-              GOS1 <- lapply(object@GeneSet1, gene2GO, params)
-              GOS2 <- lapply(object@GeneSet2, gene2GO, params)
+              GOS1 <- lapply(object@GeneSet1, gene2GO, organism=params@organism, ont=params@ontology, dropCodes=params@dropCodes)
+              GOS2 <- lapply(object@GeneSet2, gene2GO, organism=params@organism, ont=params@ontology, dropCodes=params@dropCodes)
               ##assign("SemSimCache", new.env(hash=TRUE),envir=.GlobalEnv)
 
               m = length(object@GeneSet1)

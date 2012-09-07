@@ -96,27 +96,3 @@ rebuildAllICdata <- function() {
     print("done...")
 }
 
-
-gene2GO   <-  function(gene, params) {
-    gene  <- as.character(gene)
-    if(!exists("GOSemSimEnv")) .initial()
-    if (!exists("gomap", envir=GOSemSimEnv)) {
-        loadGOMap(params)
-    }
-    gomap <- get("gomap", envir=GOSemSimEnv)
-
-    qGO   <- gomap[[gene]]
-
-    if (is.null(qGO)) {
-        return (NA)
-    }
-    if (sum(!is.na(qGO)) == 0) {
-    	return (NA)
-    }
-
-    qGO   <- qGO[qGO == params@ontology]
-    if (length(qGO) == 0) {
-        return (NA)
-    }
-    return( unique(names(qGO)) )
-}

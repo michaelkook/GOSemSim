@@ -24,8 +24,8 @@ geneSim <- function(gene1, gene2, ont="MF", organism="human", measure="Wang", dr
     gs <- new("GeneSet", GeneSet1 = gene1, GeneSet2=gene2)
     result <- sim(gs, params)
     result <- round(result, digits=3)
-    go1 <- gene2GO(gene1, params)
-    go2 <- gene2GO(gene2, params)
+    go1 <- gene2GO(gene1, params@organism, params@ontology, params@dropCodes)
+    go2 <- gene2GO(gene2, params@organism, params@ontology, params@dropCodes)
     return (list(geneSim=result, GO1=go1, GO2=go2))
 }
 
