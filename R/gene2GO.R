@@ -1,4 +1,4 @@
-loadGOMap <- function(organism){
+loadGOMap_internal <- function(organism){
     annoDb <- switch(organism,
                      anopheles   = "org.Ag.eg.db",
                      arabidopsis = "org.At.tair.db",
@@ -52,16 +52,22 @@ loadGOMap <- function(organism){
     assign("gomap.flag", organism, envir=GOSemSimEnv)
 }
 
-gene2GO <- function(gene, organism, ont, dropCodes) {
-    gene <- as.character(gene)
+##' @importMethodsFrom AnnotationDbi exists
+loadGOMap <- function(organism) {
     if(!exists("GOSemSimEnv")) .initial()
     if (!exists("gomap", envir=GOSemSimEnv)) {
-        loadGOMap(organism)
+        loadGOMap_internal(organism)
     } else {
-    	flag <- get("gomap.flag", envir=GOSemSimEnv)
-    	if (flag != organism)
-            loadGOMap(organism)
+        flag <- get("gomap.flag", envir=GOSemSimEnv)
+        if (flag != organism)
+            loadGOMap_internal(organism)
     }
+}
+
+##' @importMethodsFrom AnnotationDbi get
+gene2GO <- function(gene, organism, ont, dropCodes) {
+    gene <- as.character(gene)
+    loadGOMap(organism)
     gomap <- get("gomap", envir=GOSemSimEnv)
     go <- gomap[[gene]]
 
@@ -71,6 +77,7 @@ gene2GO <- function(gene, organism, ont, dropCodes) {
     goid <- sapply(go, function(i) i$GOID)
     evidence <- sapply(go, function(i) i$Evidence)
     ontology <- sapply(go, function(i) i$Ontology)
+
     idx <- ! evidence %in% dropCodes
     goid <- goid[idx] ## drop dropCodes Evidence
     ontology <- ontology[idx]
